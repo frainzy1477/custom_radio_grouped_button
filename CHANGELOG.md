@@ -1,3 +1,15 @@
+# [2.2.1] - 22 Sep 2023
+- Added TextStyle for selected Button
+
+# [2.2.0+1] - 03 June 2023
+- Deprecated `radius` in favor of `borderRadius`
+
+## [2.2.0] - 31 March 2023
+- Added way to select buttons programmatically (Fix #69)
+- Fixed bug where buttons were not being selected when value and label were different
+## [2.1.3] - 22 March 2023
+- Added Feature to disable a button  (Fix #67)
+
 ## [2.1.2+2] - 25 June 2022
 - Minor bug fixes
 ## [2.1.2+1] - 17 May 2022

@@ -1,8 +1,15 @@
 import 'package:custom_radio_grouped_button/custom_radio_grouped_button.dart';
 import 'package:flutter/material.dart';
 
-class RadioButton extends StatelessWidget {
-  const RadioButton({Key key}) : super(key: key);
+class RadioButton extends StatefulWidget {
+  RadioButton({Key? key}) : super(key: key);
+
+  @override
+  State<RadioButton> createState() => _RadioButtonState();
+}
+
+class _RadioButtonState extends State<RadioButton> {
+  final key = new GlobalKey<CustomRadioButtonState<String>>();
 
   @override
   Widget build(BuildContext context) {
@@ -11,12 +18,27 @@ class RadioButton extends StatelessWidget {
         title: Text('Radio Button Example'),
         centerTitle: true,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        label: Text('Grouped Button'),
-        onPressed: () {
-          Navigator.pop(context);
-        },
-        icon: Icon(Icons.check_box),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(left: 30.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            FloatingActionButton(
+              heroTag: "sfsdf",
+              onPressed: () {
+                key.currentState?.selectButton('jhgiugx');
+              },
+              child: Icon(Icons.check_box_outline_blank),
+            ),
+            FloatingActionButton.extended(
+              label: Text('Grouped Button'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              icon: Icon(Icons.check_box),
+            ),
+          ],
+        ),
       ),
       body: Container(
         child: ListView(
@@ -47,9 +69,13 @@ class RadioButton extends StatelessWidget {
                       SizedBox(
                         height: 10,
                       ),
-                      CustomRadioButton(
+                      CustomRadioButton<String>(
+                        key: key,
                         horizontal: true,
                         unSelectedColor: Theme.of(context).canvasColor,
+                        disabledValues: [
+                          "PARENT",
+                        ],
                         buttonLables: [
                           'Student',
                           'Parent',
@@ -68,7 +94,7 @@ class RadioButton extends StatelessWidget {
                         radioButtonValue: (value) {
                           print(value);
                         },
-                        selectedColor: Theme.of(context).accentColor,
+                        selectedColor: Theme.of(context).colorScheme.secondary,
                       ),
                     ],
                   ),
@@ -154,7 +180,13 @@ class RadioButton extends StatelessWidget {
                       buttonTextStyle: ButtonTextStyle(
                         selectedColor: Colors.white,
                         unSelectedColor: Colors.black,
-                        textStyle: Theme.of(context).textTheme.bodyText1,
+                        selectedTextStyle: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textStyle: Theme.of(context).textTheme.bodyLarge ??
+                            TextStyle(),
                       ),
                       radioButtonValue: (value) {
                         print(value);

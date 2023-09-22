@@ -29,6 +29,8 @@ class CustomCheckBoxGroup<T> extends StatefulWidget {
     this.scrollController,
     this.margin,
     this.enableButtonWrap = false,
+    this.disabledValues = const [],
+    this.disabledColor,
   })  : assert(buttonLables.length == buttonValuesList.length,
             "Button values list and button lables list should have same number of eliments "),
         assert(buttonValuesList.toSet().length == buttonValuesList.length,
@@ -95,8 +97,15 @@ class CustomCheckBoxGroup<T> extends StatefulWidget {
   ///Default Selected button
   final List<T>? defaultSelected;
 
+  ///List of disabled values
+  final List<T> disabledValues;
+
   ///Unselected Color of the button
   final Color unSelectedColor;
+
+  ///Disabled Color of button
+  ///If not provided will use [unSelectedColor]
+  final Color? disabledColor;
 
   ///Unselected Color of the button border
   final Color? unSelectedBorderColor;
@@ -108,19 +117,20 @@ class CustomCheckBoxGroup<T> extends StatefulWidget {
   final bool enableButtonWrap;
 
   /// Radius for non-shape radio button
+  @Deprecated('Use shapeRadius instead')
   final double radius;
 
   /// Radius for shape radio button
   final double shapeRadius;
 
-  _CustomCheckBoxGroupState createState() => _CustomCheckBoxGroupState();
+  CustomCheckBoxGroupState<T> createState() => CustomCheckBoxGroupState<T>();
 }
 
-class _CustomCheckBoxGroupState extends State<CustomCheckBoxGroup> {
-  List<dynamic> selectedLables = [];
+class CustomCheckBoxGroupState<T> extends State<CustomCheckBoxGroup<T>> {
+  List<T> selectedValues = [];
 
-  Color borderColor(e) =>
-      (selectedLables.contains(e)
+  Color _borderColor(T e) =>
+      (selectedValues.contains(e)
           ? widget.selectedBorderColor
           : widget.unSelectedBorderColor) ??
       Theme.of(context).primaryColor;
@@ -131,21 +141,44 @@ class _CustomCheckBoxGroupState extends State<CustomCheckBoxGroup> {
     widget.defaultSelected?.where((e) {
       return widget.buttonValuesList.contains(e);
     }).forEach((e) {
-      selectedLables.add(e);
+      selectedValues.add(e);
     });
   }
 
+  List<T> get buttonValuesList => widget.buttonValuesList;
+
+  List<String> get buttonLables => widget.buttonLables;
+
+  List<T> get disabledValues => widget.disabledValues;
+
+  /// This function will select the button and update the state
+  /// THis can be access from outside to change the selected value programatically
+  /// Please note that this will also call the [checkBoxButtonValues] callback
+  void selectButton(T selectedValue) {
+    if (selectedValues.contains(selectedValue)) {
+      selectedValues.remove(selectedValue);
+    } else {
+      selectedValues.add(selectedValue);
+    }
+    if (mounted) setState(() {});
+    widget.checkBoxButtonValues(selectedValues);
+  }
+
   List<Widget> _buildButtonsColumn() {
-    return widget.buttonValuesList.map((e) {
-      int index = widget.buttonValuesList.indexOf(e);
+    return buttonValuesList.map((e) {
+      bool disabled = disabledValues.contains(e);
+      int index = buttonValuesList.indexOf(e);
+      bool isSelected = selectedValues.contains(e);
       return Padding(
         padding: EdgeInsets.all(widget.padding),
         child: Card(
           margin: widget.margin ??
               EdgeInsets.all(widget.absoluteZeroSpacing ? 0 : 4),
-          color: selectedLables.contains(e)
-              ? widget.selectedColor
-              : widget.unSelectedColor,
+          color: disabled
+              ? widget.disabledColor ?? widget.unSelectedColor
+              : selectedValues.contains(e)
+                  ? widget.selectedColor
+                  : widget.unSelectedColor,
           elevation: widget.elevation,
           shape: widget.enableShape
               ? widget.customShape == null
@@ -162,35 +195,21 @@ class _CustomCheckBoxGroupState extends State<CustomCheckBoxGroup> {
                   ? widget.customShape == null
                       ? OutlineInputBorder(
                           borderSide:
-                              BorderSide(color: borderColor(e), width: 1),
-                          borderRadius:
-                              BorderRadius.all(Radius.circular(widget.radius)),
+                              BorderSide(color: _borderColor(e), width: 1),
+                          borderRadius: BorderRadius.all(
+                              Radius.circular(widget.shapeRadius)),
                         )
                       : widget.customShape
                   : OutlineInputBorder(
-                      borderSide: BorderSide(color: borderColor(e), width: 1),
+                      borderSide: BorderSide(color: _borderColor(e), width: 1),
                       borderRadius: BorderRadius.zero,
                     ),
-              onPressed: () {
-                if (selectedLables.contains(e)) {
-                  selectedLables.remove(e);
-                } else {
-                  selectedLables.add(e);
-                }
-                setState(() {});
-                widget.checkBoxButtonValues(selectedLables);
-              },
-              child: Text(
-                widget.buttonLables[index],
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: widget.buttonTextStyle.textStyle.copyWith(
-                  color: selectedLables.contains(e)
-                      ? widget.buttonTextStyle.selectedColor
-                      : widget.buttonTextStyle.unSelectedColor,
-                ),
-              ),
+              onPressed: disabled ? null : () => selectButton(e),
+              child: Text(widget.buttonLables[index],
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: textStyle(isSelected, disabled)),
             ),
           ),
         ),
@@ -198,15 +217,34 @@ class _CustomCheckBoxGroupState extends State<CustomCheckBoxGroup> {
     }).toList();
   }
 
+  TextStyle textStyle(bool isSelected, bool disabled) {
+    if (isSelected) {
+      return widget.buttonTextStyle.selectedTextStyle.copyWith(
+        color: disabled
+            ? widget.buttonTextStyle.disabledColor
+            : widget.buttonTextStyle.selectedColor,
+      );
+    }
+    return widget.buttonTextStyle.textStyle.copyWith(
+      color: disabled
+          ? widget.buttonTextStyle.disabledColor
+          : widget.buttonTextStyle.unSelectedColor,
+    );
+  }
+
   List<Widget> _buildButtonsRow() {
-    return widget.buttonValuesList.map((e) {
-      int index = widget.buttonValuesList.indexOf(e);
+    return buttonValuesList.map((e) {
+      int index = buttonValuesList.indexOf(e);
+      bool disabled = disabledValues.contains(e);
+      bool isSelected = selectedValues.contains(e);
       return Card(
         margin:
             widget.margin ?? EdgeInsets.all(widget.absoluteZeroSpacing ? 0 : 4),
-        color: selectedLables.contains(e)
-            ? widget.selectedColor
-            : widget.unSelectedColor,
+        color: disabled
+            ? widget.disabledColor ?? widget.unSelectedColor
+            : selectedValues.contains(e)
+                ? widget.selectedColor
+                : widget.unSelectedColor,
         elevation: widget.elevation,
         shape: widget.enableShape
             ? widget.customShape == null
@@ -224,34 +262,23 @@ class _CustomCheckBoxGroupState extends State<CustomCheckBoxGroup> {
             shape: widget.enableShape
                 ? widget.customShape == null
                     ? OutlineInputBorder(
-                        borderSide: BorderSide(color: borderColor(e), width: 1),
-                        borderRadius:
-                            BorderRadius.all(Radius.circular(widget.radius)),
+                        borderSide:
+                            BorderSide(color: _borderColor(e), width: 1),
+                        borderRadius: BorderRadius.all(
+                            Radius.circular(widget.shapeRadius)),
                       )
                     : widget.customShape
                 : OutlineInputBorder(
-                    borderSide: BorderSide(color: borderColor(e), width: 1),
+                    borderSide: BorderSide(color: _borderColor(e), width: 1),
                     borderRadius: BorderRadius.zero,
                   ),
-            onPressed: () {
-              if (selectedLables.contains(e)) {
-                selectedLables.remove(e);
-              } else {
-                selectedLables.add(e);
-              }
-              setState(() {});
-              widget.checkBoxButtonValues(selectedLables);
-            },
+            onPressed: disabled ? null : () => selectButton(e),
             child: Text(
               widget.buttonLables[index],
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
-              style: widget.buttonTextStyle.textStyle.copyWith(
-                color: selectedLables.contains(e)
-                    ? widget.buttonTextStyle.selectedColor
-                    : widget.buttonTextStyle.unSelectedColor,
-              ),
+              style: textStyle(isSelected, disabled),
             ),
           ),
         ),
